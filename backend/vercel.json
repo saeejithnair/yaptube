@@ -4,6 +4,10 @@
         {
             "src": "index.js",
             "use": "@vercel/node"
+        },
+        {
+            "src": "transcribe.py",
+            "use": "@vercel/python"
         }
     ],
     "routes": [

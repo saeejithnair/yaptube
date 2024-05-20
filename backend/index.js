@@ -1,32 +1,25 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const ytdl = require('ytdl-core');
-const { exec } = require('child_process');
 const fs = require('fs');
-const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
+const { PythonShell } = require('python-shell');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 
-const transcribeAudio = async (audioStream) => {
-    // Save audio to a file for transcription
-    const filePath = './audio.mp3';
+const transcribeAudio = async (audioStream, filePath) => {
     const writeStream = fs.createWriteStream(filePath);
     await pipeline(audioStream, writeStream);
 
-    // Use Whisper model for transcription
     return new Promise((resolve, reject) => {
-        exec(`whisper ${filePath} --model base --language en`, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
+        PythonShell.run('transcribe.py', { args: [filePath] }, (err, results) => {
+            if (err) {
+                reject(err);
             } else {
-                const transcript = fs.readFileSync(`${filePath}.txt`, 'utf-8');
-                fs.unlinkSync(filePath); // Clean up audio file
-                fs.unlinkSync(`${filePath}.txt`); // Clean up transcript file
-                resolve(transcript);
+                resolve(results[0]);
             }
         });
     });
@@ -41,7 +34,7 @@ app.post('/api/transcript', async (req, res) => {
 
     try {
         const audioStream = ytdl(url, { filter: 'audioonly' });
-        const transcript = await transcribeAudio(audioStream);
+        const transcript = await transcribeAudio(audioStream, 'audio.mp3');
 
         res.json({ transcript });
     } catch (error) {
