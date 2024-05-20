@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
+import API_BASE_URL from './config';
 
 function App() {
   const [url, setUrl] = useState('');
@@ -13,7 +14,7 @@ function App() {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('/api/transcript', { url });
+      const response = await axios.post(`${API_BASE_URL}/api/transcript`, { url });
       setTranscript(response.data.transcript);
     } catch (error) {
       setError('Failed to fetch transcript. Please check the URL and try again.');
